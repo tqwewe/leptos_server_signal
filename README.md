@@ -40,7 +40,7 @@ ssr = [
 
 **Client**
 
-```
+```rust
 use dipa::DiffPatch;
 use leptos::*;
 use leptos_server_signal::create_server_signal;
@@ -66,7 +66,7 @@ pub fn App(cx: Scope) -> impl IntoView {
 
 **Server (Axum)**
 
-```ignore
+```rust
 #[cfg(feature = "ssr")]
 pub async fn websocket(ws: WebSocketUpgrade) -> axum::response::Response {
     ws.on_upgrade(handle_socket)

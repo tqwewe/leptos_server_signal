@@ -40,7 +40,7 @@
 //!
 //! **Client**
 //!
-//! ```
+//! ```ignore
 //! use dipa::DiffPatch;
 //! use leptos::*;
 //! use leptos_server_signal::create_server_signal;
