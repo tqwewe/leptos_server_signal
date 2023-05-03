@@ -38,3 +38,7 @@ default = []
 ssr = []
 actix = ["dep:actix-ws"]
 axum = ["dep:axum", "dep:tokio"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
