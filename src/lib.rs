@@ -68,18 +68,17 @@
 //!
 //! ```ignore
 //! #[cfg(feature = "ssr")]
-//! pub async fn websocket(ws: WebSocketUpgrade) -> axum::response::Response {
+//! pub async fn websocket(ws: WebSocketUpgrade) -> Response {
 //!     ws.on_upgrade(handle_socket)
 //! }
 //!
 //! #[cfg(feature = "ssr")]
-//! async fn handle_socket(socket: WebSocket) {
-//!     let websocket = Arc::new(Mutex::new(socket));
+//! async fn handle_socket(mut socket: WebSocket) {
 //!     let mut count = ServerSignal::<Count>::new(websocket);
 //!
 //!     loop {
 //!         tokio::time::sleep(Duration::from_millis(10)).await;
-//!         if count.with(|count| count.value += 1).await.is_err() {
+//!         if count.with(&mut socket, |count| count.value += 1).await.is_err() {
 //!             break;
 //!         }
 //!     }

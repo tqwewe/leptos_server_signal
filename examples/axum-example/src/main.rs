@@ -54,19 +54,21 @@ pub async fn websocket(ws: axum::extract::WebSocketUpgrade) -> axum::response::R
 }
 
 #[cfg(feature = "ssr")]
-async fn handle_socket(socket: axum::extract::ws::WebSocket) {
-    use std::{sync::Arc, time::Duration};
+async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
+    use std::time::Duration;
 
     use axum_example::app::Count;
     use leptos_server_signal::ServerSignal;
-    use tokio::sync::Mutex;
 
-    let websocket = Arc::new(Mutex::new(socket));
-    let mut count = ServerSignal::<Count>::new(websocket);
+    let mut count = ServerSignal::<Count>::new();
 
     loop {
         tokio::time::sleep(Duration::from_millis(10)).await;
-        if count.with(|count| count.value += 1).await.is_err() {
+        if count
+            .with(&mut socket, |count| count.value += 1)
+            .await
+            .is_err()
+        {
             break;
         }
     }

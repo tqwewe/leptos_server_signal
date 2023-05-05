@@ -1,6 +1,6 @@
 [package]
 name = "leptos_server_signal"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Ari Seyhun <ariseyhun@live.com.au>"]
 description = "Leptos server signals synced through websockets"
@@ -31,13 +31,14 @@ actix-ws = { version = "0.2.5", optional = true }
 
 # Axum
 axum = { version = "0.6.18", default-features = false, features = ["ws"], optional = true }
+futures = { version = "0.3.28", default-features = false, optional = true }
 tokio = { version = "1.28.0", features = ["sync"], optional = true }
 
 [features]
 default = []
 ssr = []
 actix = ["dep:actix-ws"]
-axum = ["dep:axum", "dep:tokio"]
+axum = ["dep:axum", "dep:futures", "dep:tokio"]
 
 [package.metadata.docs.rs]
 all-features = true
