@@ -102,7 +102,7 @@ pub fn provide_websocket(cx: Scope, url: &str) -> Result<(), JsValue> {
 /// #[component]
 /// pub fn App(cx: Scope) -> impl IntoView {
 ///     // Create server signal
-///     let count = create_server_signal::<Count>(cx);
+///     let count = create_server_signal::<Count>(cx, "counter");
 ///
 ///     view! { cx,
 ///         <h1>"Count: " {move || count().value.to_string()}</h1>
