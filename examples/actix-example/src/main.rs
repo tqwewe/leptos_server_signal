@@ -50,12 +50,13 @@ pub async fn websocket(
     use leptos_server_signal::ServerSignal;
 
     let (res, session, _msg_stream) = actix_ws::handle(&req, stream).unwrap();
-    let mut count = ServerSignal::<Count>::new(session);
+    let mut count = ServerSignal::<Count>::new("counter", session).unwrap();
 
     actix_web::rt::spawn(async move {
         loop {
-            actix_web::rt::time::sleep(Duration::from_millis(10)).await;
-            if count.with(|count| count.value += 1).await.is_err() {
+            actix_web::rt::time::sleep(Duration::from_millis(100)).await;
+            let result = count.with(|count| count.value += 1).await;
+            if result.is_err() {
                 break;
             }
         }

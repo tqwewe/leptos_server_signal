@@ -5,13 +5,11 @@ Server signals are [leptos] [signals] kept in sync with the server through webso
 The signals are read-only on the client side, and can be written to by the server.
 This is useful if you want real-time updates on the UI controlled by the server.
 
-Changes to a signal are sent through a websocket to the client as diffs,
-containing only what has been changed, courtesy of the [dipa] crate.
-The data is encoded using cbor encoding and sent via binary websocket messages.
+Changes to a signal are sent through a websocket to the client as [json patches].
 
 [leptos]: https://crates.io/crates/leptos
 [signals]: https://docs.rs/leptos/latest/leptos/struct.Signal.html
-[dipa]: https://crates.io/crates/dipa
+[json patches]: https://docs.rs/json-patch/latest/json_patch/struct.Patch.html
 
 ## Feature flags
 
@@ -28,8 +26,8 @@ The data is encoded using cbor encoding and sent via binary websocket messages.
 
 ```toml
 [dependencies]
-dipa = { version = "*", features = ["derive"] } # Used for diffing with serde
 leptos_server_signal = "*"
+serde = { version = "*", features = ["derive"] }
 
 [features]
 ssr = [
@@ -41,11 +39,11 @@ ssr = [
 **Client**
 
 ```rust
-use dipa::DiffPatch;
 use leptos::*;
 use leptos_server_signal::create_server_signal;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, DiffPatch)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Count {
     pub value: i32,
 }
@@ -56,7 +54,7 @@ pub fn App(cx: Scope) -> impl IntoView {
     leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws").unwrap();
 
     // Create server signal
-    let count = create_server_signal::<Count>(cx);
+    let count = create_server_signal::<Count>(cx, "counter");
 
     view! { cx,
         <h1>"Count: " {move || count().value.to_string()}</h1>
@@ -74,11 +72,12 @@ pub async fn websocket(ws: WebSocketUpgrade) -> Response {
 
 #[cfg(feature = "ssr")]
 async fn handle_socket(mut socket: WebSocket) {
-    let mut count = ServerSignal::<Count>::new(websocket);
+    let mut count = ServerSignal::<Count>::new("counter").unwrap();
 
     loop {
         tokio::time::sleep(Duration::from_millis(10)).await;
-        if count.with(&mut socket, |count| count.value += 1).await.is_err() {
+        let result = count.with(&mut socket, |count| count.value += 1).await;
+        if result.is_err() {
             break;
         }
     }

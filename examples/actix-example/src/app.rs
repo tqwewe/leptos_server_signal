@@ -1,8 +1,8 @@
-use dipa::DiffPatch;
 use leptos::*;
 use leptos_server_signal::create_server_signal;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Default, DiffPatch)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Count {
     pub value: i32,
 }
@@ -13,7 +13,7 @@ pub fn App(cx: Scope) -> impl IntoView {
     leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws").unwrap();
 
     // Create server signal
-    let count = create_server_signal::<Count>(cx);
+    let count = create_server_signal::<Count>(cx, "counter");
 
     view! { cx,
         <h1>"Count: " {move || count().value.to_string()}</h1>

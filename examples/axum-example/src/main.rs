@@ -60,15 +60,12 @@ async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
     use axum_example::app::Count;
     use leptos_server_signal::ServerSignal;
 
-    let mut count = ServerSignal::<Count>::new();
+    let mut count = ServerSignal::<Count>::new("counter").unwrap();
 
     loop {
-        tokio::time::sleep(Duration::from_millis(10)).await;
-        if count
-            .with(&mut socket, |count| count.value += 1)
-            .await
-            .is_err()
-        {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        let result = count.with(&mut socket, |count| count.value += 1).await;
+        if result.is_err() {
             break;
         }
     }

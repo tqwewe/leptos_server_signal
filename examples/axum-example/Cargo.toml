@@ -11,13 +11,13 @@ axum = { version = "0.6.4", optional = true }
 console_error_panic_hook = "0.1"
 console_log = "1"
 cfg-if = "1"
-dipa = { version = "0.1", features = ["derive"] }
 leptos = { version = "0.2", default-features = false, features = ["serde"] }
 leptos_axum = { version = "0.2", optional = true }
 leptos_meta = { version = "0.2", default-features = false }
 leptos_router = { version = "0.2", default-features = false }
 leptos_server_signal = { path = "../.." }
 log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
 simple_logger = "4"
 tokio = { version = "1.25.0", optional = true }
 tower = { version = "0.4.13", optional = true }

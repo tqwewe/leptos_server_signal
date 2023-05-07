@@ -1,6 +1,6 @@
 [package]
 name = "leptos_server_signal"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ari Seyhun <ariseyhun@live.com.au>"]
 description = "Leptos server signals synced through websockets"
@@ -17,14 +17,14 @@ categories = [
 
 [dependencies]
 cfg-if = "1"
-ciborium = "0.2.0"
-dipa = "0.1.1"
 js-sys = "0.3.61"
+json-patch = "1.0.0"
 leptos = "0.2.5"
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0"
 wasm-bindgen = { version = "0.2.84", default-features = false }
-web-sys = { version = "0.3.61", features = ["BinaryType", "WebSocket", "MessageEvent"] }
+web-sys = { version = "0.3.61", features = ["WebSocket", "MessageEvent"] }
+thiserror = { version = "1.0.40", optional = true }
 
 # Actix
 actix-ws = { version = "0.2.5", optional = true }
@@ -32,13 +32,12 @@ actix-ws = { version = "0.2.5", optional = true }
 # Axum
 axum = { version = "0.6.18", default-features = false, features = ["ws"], optional = true }
 futures = { version = "0.3.28", default-features = false, optional = true }
-tokio = { version = "1.28.0", features = ["sync"], optional = true }
 
 [features]
 default = []
 ssr = []
-actix = ["dep:actix-ws"]
-axum = ["dep:axum", "dep:futures", "dep:tokio"]
+actix = ["dep:actix-ws", "dep:thiserror"]
+axum = ["dep:axum", "dep:futures", "dep:thiserror"]
 
 [package.metadata.docs.rs]
 all-features = true
