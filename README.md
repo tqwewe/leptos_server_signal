@@ -62,6 +62,8 @@ pub fn App(cx: Scope) -> impl IntoView {
 }
 ```
 
+You will need to enable the Leptos nightly options to use `count().value` above. If you don't want to use nightly, you can instead use `count.get().value`.
+
 **Server (Axum)**
 
 ```rust
