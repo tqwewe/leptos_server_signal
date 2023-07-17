@@ -57,7 +57,7 @@ pub fn App(cx: Scope) -> impl IntoView {
     let count = create_server_signal::<Count>(cx, "counter");
 
     view! { cx,
-        <h1>"Count: " {move || count().value.to_string()}</h1>
+        <h1>"Count: " {move || count.get().value.to_string()}</h1>
     }
 }
 ```
