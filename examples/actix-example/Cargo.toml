@@ -18,9 +18,9 @@ cfg-if = "1"
 leptos = { version = "0.4", default-features = false, features = [
   "serde",
 ] }
-leptos_meta = { version = "0.3", default-features = false }
-leptos_actix = { version = "0.3", optional = true }
-leptos_router = { version = "0.3", default-features = false }
+leptos_meta = { version = "0.4", default-features = false }
+leptos_actix = { version = "0.4", optional = true }
+leptos_router = { version = "0.4", default-features = false }
 leptos_server_signal = { path = "../.." }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
