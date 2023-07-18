@@ -121,7 +121,7 @@ where
         if #[cfg(target_arch = "wasm32")] {
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
-            use leptos::{use_context, create_effect, SignalUpdate};
+            use leptos::{use_context, create_effect, SignalGet, SignalSet, SignalUpdate};
             use js_sys::{Function, JsString};
 
             let (json_get, json_set) = create_signal(cx, serde_json::to_value(T::default()).unwrap());
@@ -138,8 +138,8 @@ where
                                     json_set.update(|doc| {
                                         json_patch::patch(doc, &update_signal.patch).unwrap();
                                     });
-                                    let new_value = serde_json::from_value(json_get()).unwrap();
-                                    set(new_value);
+                                    let new_value = serde_json::from_value(json_get.get()).unwrap();
+                                    set.set(new_value);
                                 }
                             }
                         }) as Box<dyn FnMut(_)>);

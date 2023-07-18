@@ -15,18 +15,23 @@ bincode = "1.3.3"
 console_error_panic_hook = "0.1"
 console_log = "1"
 cfg-if = "1"
-leptos = { version = "0.3", default-features = false, features = [
+leptos = { version = "0.4", default-features = false, features = [
   "serde",
+  "nightly"
 ] }
-leptos_meta = { version = "0.3", default-features = false }
-leptos_actix = { version = "0.3", optional = true }
-leptos_router = { version = "0.3", default-features = false }
+leptos_meta = { version = "0.4", default-features = false, features = [
+  "nightly"
+]}
+leptos_actix = { version = "0.4", optional = true }
+leptos_router = { version = "0.4", default-features = false, features = [
+  "nightly"
+]}
 leptos_server_signal = { path = "../.." }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 simple_logger = "4"
-wasm-bindgen = "0.2"
+wasm-bindgen = "=0.2.84"
 
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]

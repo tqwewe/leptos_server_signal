@@ -11,10 +11,17 @@ axum = { version = "0.6.4", optional = true }
 console_error_panic_hook = "0.1"
 console_log = "1"
 cfg-if = "1"
-leptos = { version = "0.3", default-features = false, features = ["serde"] }
-leptos_axum = { version = "0.3", optional = true }
-leptos_meta = { version = "0.3", default-features = false }
-leptos_router = { version = "0.3", default-features = false }
+leptos = { version = "0.4", default-features = false, features = [
+  "serde",
+  "nightly"
+] }
+leptos_meta = { version = "0.4", default-features = false, features = [
+  "nightly"
+]}
+leptos_axum = { version = "0.4", optional = true }
+leptos_router = { version = "0.4", default-features = false, features = [
+  "nightly"
+]}
 leptos_server_signal = { path = "../.." }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -22,7 +29,7 @@ simple_logger = "4"
 tokio = { version = "1.25.0", optional = true }
 tower = { version = "0.4.13", optional = true }
 tower-http = { version = "0.4", features = ["fs"], optional = true }
-wasm-bindgen = "0.2"
+wasm-bindgen = "=0.2.84"
 thiserror = "1.0.38"
 tracing = { version = "0.1.37", optional = true }
 http = "0.2.8"
@@ -70,7 +77,7 @@ site-pkg-dir = "pkg"
 # The assets-dir cannot have a sub directory with the same name/path as site-pkg-dir.
 #
 # Optional. Env: LEPTOS_ASSETS_DIR.
-assets-dir = "public"
+# assets-dir = "public"
 
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
 site-addr = "127.0.0.1:3000"
