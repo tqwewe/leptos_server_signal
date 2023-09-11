@@ -1,9 +1,13 @@
 #![doc = include_str!("../README.md")]
 
+use std::borrow::Borrow;
 use std::borrow::Cow;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 
 use json_patch::Patch;
-use leptos::{create_signal, ReadSignal, Scope};
+use leptos::{create_signal, ReadSignal, Scope, WriteSignal};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasm_bindgen::JsValue;
