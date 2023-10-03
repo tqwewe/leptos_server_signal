@@ -1,13 +1,11 @@
 #![doc = include_str!("../README.md")]
 
 use std::borrow::Borrow;
-use std::borrow::Cow;
 use std::cell::RefCell;
-use std::collections::HashMap;
-use std::rc::Rc;
+use std::{borrow::Cow, collections::HashMap, rc::Rc};
 
 use json_patch::Patch;
-use leptos::{create_signal, ReadSignal, Scope, WriteSignal};
+use leptos::{create_signal, ReadSignal, WriteSignal};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasm_bindgen::JsValue;
@@ -78,16 +76,16 @@ impl ServerSignalUpdate {
 ///
 /// ```ignore
 /// #[component]
-/// pub fn App(cx: Scope) -> impl IntoView {
+/// pub fn App() -> impl IntoView {
 ///     // Provide websocket connection
-///     leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws").unwrap();
+///     leptos_server_signal::provide_websocket("ws://localhost:3000/ws").unwrap();
 ///     
 ///     // ...
 /// }
 /// ```
 #[allow(unused_variables)]
-pub fn provide_websocket(cx: Scope, url: &str) -> Result<(), JsValue> {
-    provide_websocket_inner(cx, url)
+pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
+    provide_websocket_inner(url)
 }
 
 /// Creates a signal which is controlled by the server.
@@ -104,22 +102,22 @@ pub fn provide_websocket(cx: Scope, url: &str) -> Result<(), JsValue> {
 /// }
 ///
 /// #[component]
-/// pub fn App(cx: Scope) -> impl IntoView {
+/// pub fn App() -> impl IntoView {
 ///     // Create server signal
-///     let count = create_server_signal::<Count>(cx, "counter");
+///     let count = create_server_signal::<Count>("counter");
 ///
-///     view! { cx,
+///     view! {
 ///         <h1>"Count: " {move || count().value.to_string()}</h1>
 ///     }
 /// }
 /// ```
 #[allow(unused_variables)]
-pub fn create_server_signal<T>(cx: Scope, name: impl Into<Cow<'static, str>>) -> ReadSignal<T>
+pub fn create_server_signal<T>(name: impl Into<Cow<'static, str>>) -> ReadSignal<T>
 where
     T: Default + Serialize + for<'de> Deserialize<'de>,
 {
     let name: Cow<'static, str> = name.into();
-    let (get, set) = create_signal(cx, T::default());
+    let (get, set) = create_signal(T::default());
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -134,17 +132,17 @@ where
                 // well in testing, and the primary caveats are around unnecessary
                 // updates firing, but our state synchronization already prevents
                 // that on the server side
-                create_effect(cx, move |_| {
+                create_effect(move |_| {
                     let name = name.clone();
                     let new_value = serde_json::from_value(signal.get()).unwrap();
                     set.set(new_value);
-                })
+                });
 
             } else {
-                leptos::error!(
+                leptos::logging::error!(
                     r#"server signal was used without a websocket being provided.
 
-Ensure you call `leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws")` at the highest level in your app."#
+Ensure you call `leptos_server_signal::provide_websocket("ws://localhost:3000/ws")` at the highest level in your app."#
                 );
             }
 
@@ -178,18 +176,18 @@ cfg_if::cfg_if! {
         }
 
         #[inline]
-        fn provide_websocket_inner(cx: Scope, url: &str) -> Result<(), JsValue> {
+        fn provide_websocket_inner(_url: &str) -> Result<(), JsValue> {
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
             use leptos::{use_context, SignalUpdate};
             use js_sys::{Function, JsString};
 
-            if use_context::<ServerSignalWebSocket>(cx).is_none() {
+            if use_context::<ServerSignalWebSocket>().is_none() {
                 let ws = WebSocket::new(url)?;
                 provide_context(cx, ServerSignalWebSocket { ws: ws, state_signals: Rc::default(), delayed_updates: Rc::default() });
             }
 
-            let ws = use_context::<ServerSignalWebSocket>(cx).unwrap();
+            let ws = use_context::<ServerSignalWebSocket>().unwrap();
 
             let handlers = ws.state_signals.clone();
             let delayed_updates = ws.delayed_updates.clone();
@@ -226,7 +224,7 @@ cfg_if::cfg_if! {
         }
     } else {
         #[inline]
-        fn provide_websocket_inner(_cx: Scope, _url: &str) -> Result<(), JsValue> {
+        fn provide_websocket_inner(_url: &str) -> Result<(), JsValue> {
             Ok(())
         }
     }
