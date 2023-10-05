@@ -8,14 +8,14 @@ pub struct Count {
 }
 
 #[component]
-pub fn App(cx: Scope) -> impl IntoView {
+pub fn App() -> impl IntoView {
     // Provide websocket connection
-    leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws").unwrap();
+    leptos_server_signal::provide_websocket("ws://localhost:3000/ws").unwrap();
 
     // Create server signal
-    let count = create_server_signal::<Count>(cx, "counter");
+    let count = create_server_signal::<Count>("counter");
 
-    view! { cx,
+    view! {
         <h1>"Count: " {move || count().value.to_string()}</h1>
     }
 }
