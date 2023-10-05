@@ -119,45 +119,31 @@ where
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
-            use web_sys::MessageEvent;
-            use wasm_bindgen::{prelude::Closure, JsCast};
-            use leptos::{use_context, create_effect, SignalGetUntracked, SignalSet, SignalUpdate};
-            use js_sys::{Function, JsString};
+            use leptos::{use_context, create_effect, create_rw_signal, SignalGet, SignalSet};
 
-            let (json_get, json_set) = create_signal(cx, serde_json::to_value(T::default()).unwrap());
-            let ws = use_context::<ServerSignalWebSocket>(cx);
+            let signal = create_rw_signal(cx, serde_json::to_value(T::default()).unwrap());
+            if let Some(ServerSignalWebSocket { state_signals, .. }) = use_context::<ServerSignalWebSocket>(cx) {
+                let name: Cow<'static, str> = name.into();
+                state_signals.borrow_mut().insert(name.clone(), signal);
 
-            match ws {
-                Some(ServerSignalWebSocket(ws)) => {
-                    create_effect(cx, move |_| {
-                        let name = name.clone();
-                        let callback = Closure::wrap(Box::new(move |event: MessageEvent| {
-                            let ws_string = event.data().dyn_into::<JsString>().unwrap().as_string().unwrap();
-                            if let Ok(update_signal) = serde_json::from_str::<ServerSignalUpdate>(&ws_string) {
-                                if update_signal.name == name {
-                                    json_set.update(|doc| {
-                                        json_patch::patch(doc, &update_signal.patch).unwrap();
-                                    });
-                                    let new_value = serde_json::from_value(json_get.get_untracked()).unwrap();
-                                    set.set(new_value);
-                                }
-                            }
-                        }) as Box<dyn FnMut(_)>);
-                        let function: &Function = callback.as_ref().unchecked_ref();
-                        ws.set_onmessage(Some(function));
+                // Note: The leptos docs advise against doing this. It seems to work
+                // well in testing, and the primary caveats are around unnecessary
+                // updates firing, but our state synchronization already prevents
+                // that on the server side
+                create_effect(cx, move |_| {
+                    let name = name.clone();
+                    let new_value = serde_json::from_value(signal.get()).unwrap();
+                    set.set(new_value);
+                })
 
-                        // Keep the closure alive for the lifetime of the program
-                        callback.forget();
-                    });
-                }
-                None => {
-                    leptos::error!(
-                        r#"server signal was used without a websocket being provided.
+            } else {
+                leptos::error!(
+                    r#"server signal was used without a websocket being provided.
 
 Ensure you call `leptos_server_signal::provide_websocket(cx, "ws://localhost:3000/ws")` at the highest level in your app."#
-                    );
-                }
+                );
             }
+
         }
     }
 
@@ -166,19 +152,72 @@ Ensure you call `leptos_server_signal::provide_websocket(cx, "ws://localhost:300
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
+        use std::cell::RefCell;
+        use std::collections::HashMap;
+        use std::rc::Rc;
+
         use web_sys::WebSocket;
-        use leptos::{provide_context, use_context};
+        use leptos::{provide_context, RwSignal};
 
         #[derive(Clone, Debug, PartialEq, Eq)]
-        struct ServerSignalWebSocket(WebSocket);
+        struct ServerSignalWebSocket {
+            ws: WebSocket,
+            // References to these are kept by the closure for the callback
+            // onmessage callback on the websocket
+            state_signals: Rc<RefCell<HashMap<Cow<'static, str>, RwSignal<serde_json::Value>>>>,
+            // When the websocket is first established, the leptos may not have
+            // completed the traversal that sets up all of the state signals.
+            // Without that, we don't have a base state to apply the patches to,
+            // and therefore we must keep a record of the patches to apply after
+            // the state has been set up.
+            delayed_updates: Rc<RefCell<HashMap<Cow<'static, str>, Vec<Patch>>>>,
+        }
 
         #[inline]
         fn provide_websocket_inner(cx: Scope, url: &str) -> Result<(), JsValue> {
+            use web_sys::MessageEvent;
+            use wasm_bindgen::{prelude::Closure, JsCast};
+            use leptos::{use_context, SignalUpdate};
+            use js_sys::{Function, JsString};
+
             if use_context::<ServerSignalWebSocket>(cx).is_none() {
                 let ws = WebSocket::new(url)?;
-                provide_context(cx, ServerSignalWebSocket(ws));
+                provide_context(cx, ServerSignalWebSocket { ws: ws, state_signals: Rc::default(), delayed_updates: Rc::default() });
             }
 
+            let ws = use_context::<ServerSignalWebSocket>(cx).unwrap();
+
+            let handlers = ws.state_signals.clone();
+            let delayed_updates = ws.delayed_updates.clone();
+
+            let callback = Closure::wrap(Box::new(move |event: MessageEvent| {
+                let ws_string = event.data().dyn_into::<JsString>().unwrap().as_string().unwrap();
+                if let Ok(update_signal) = serde_json::from_str::<ServerSignalUpdate>(&ws_string) {
+                    let handler_map = (*handlers).borrow();
+                    let name = &update_signal.name;
+                    let mut delayed_map = (*delayed_updates).borrow_mut();
+                    if let Some(signal) = handler_map.get(name) {
+                        if let Some(delayed_patches) = delayed_map.remove(name) {
+                            signal.update(|doc| {
+                                for patch in delayed_patches {
+                                    json_patch::patch(doc, &patch).unwrap();
+                                }
+                            });
+                        }
+                        signal.update(|doc| {
+                            json_patch::patch(doc, &update_signal.patch).unwrap();
+                        });
+                    } else {
+                        leptos::warn!("No local state for update to {}. Queuing patch.", name);
+                        delayed_map.entry(name.clone()).or_default().push(update_signal.patch.clone());
+                    }
+                }
+            }) as Box<dyn FnMut(_)>);
+            let function: &Function = callback.as_ref().unchecked_ref();
+            ws.ws.set_onmessage(Some(function));
+
+            // Keep the closure alive for the lifetime of the program
+            callback.forget();
             Ok(())
         }
     } else {
@@ -188,3 +227,4 @@ cfg_if::cfg_if! {
         }
     }
 }
+
