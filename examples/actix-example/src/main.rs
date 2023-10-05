@@ -9,7 +9,6 @@ async fn main() -> std::io::Result<()> {
 
     let conf = get_configuration(None).await.unwrap();
     let addr = conf.leptos_options.site_addr;
-    // Generate the list of routes in your Leptos App
     let routes = generate_route_list(|cx| view! { cx, <App/> });
 
     HttpServer::new(move || {
@@ -25,7 +24,6 @@ async fn main() -> std::io::Result<()> {
                 |cx| view! { cx, <App/> },
             )
             .service(Files::new("/", site_root))
-        //.wrap(middleware::Compress::default())
     })
     .bind(&addr)?
     .run()
@@ -64,3 +62,4 @@ pub async fn websocket(
 
     res
 }
+
