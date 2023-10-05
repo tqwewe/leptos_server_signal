@@ -11,6 +11,10 @@ default_job = "check"
 command = ["cargo", "check", "--target", "wasm32-unknown-unknown", "--color", "always"]
 need_stdout = false
 
+[jobs.check-ssr]
+command = ["cargo", "check", "--all-features", "--color", "always"]
+need_stdout = false
+
 # [jobs.check-all]
 # command = ["cargo", "check", "--all-targets", "--color", "always"]
 # need_stdout = false

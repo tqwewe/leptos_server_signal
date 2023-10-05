@@ -1,11 +1,9 @@
 #![doc = include_str!("../README.md")]
 
-use std::borrow::Borrow;
-use std::cell::RefCell;
-use std::{borrow::Cow, collections::HashMap, rc::Rc};
+use std::borrow::Cow;
 
 use json_patch::Patch;
-use leptos::{create_signal, ReadSignal, WriteSignal};
+use leptos::{create_signal, ReadSignal};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasm_bindgen::JsValue;
@@ -123,8 +121,8 @@ where
         if #[cfg(target_arch = "wasm32")] {
             use leptos::{use_context, create_effect, create_rw_signal, SignalGet, SignalSet};
 
-            let signal = create_rw_signal(cx, serde_json::to_value(T::default()).unwrap());
-            if let Some(ServerSignalWebSocket { state_signals, .. }) = use_context::<ServerSignalWebSocket>(cx) {
+            let signal = create_rw_signal(serde_json::to_value(T::default()).unwrap());
+            if let Some(ServerSignalWebSocket { state_signals, .. }) = use_context::<ServerSignalWebSocket>() {
                 let name: Cow<'static, str> = name.into();
                 state_signals.borrow_mut().insert(name.clone(), signal);
 
@@ -176,7 +174,7 @@ cfg_if::cfg_if! {
         }
 
         #[inline]
-        fn provide_websocket_inner(_url: &str) -> Result<(), JsValue> {
+        fn provide_websocket_inner(url: &str) -> Result<(), JsValue> {
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
             use leptos::{use_context, SignalUpdate};
@@ -184,7 +182,7 @@ cfg_if::cfg_if! {
 
             if use_context::<ServerSignalWebSocket>().is_none() {
                 let ws = WebSocket::new(url)?;
-                provide_context(cx, ServerSignalWebSocket { ws: ws, state_signals: Rc::default(), delayed_updates: Rc::default() });
+                provide_context(ServerSignalWebSocket { ws, state_signals: Rc::default(), delayed_updates: Rc::default() });
             }
 
             let ws = use_context::<ServerSignalWebSocket>().unwrap();
@@ -210,7 +208,7 @@ cfg_if::cfg_if! {
                             json_patch::patch(doc, &update_signal.patch).unwrap();
                         });
                     } else {
-                        leptos::warn!("No local state for update to {}. Queuing patch.", name);
+                        leptos::logging::warn!("No local state for update to {}. Queuing patch.", name);
                         delayed_map.entry(name.clone()).or_default().push(update_signal.patch.clone());
                     }
                 }
