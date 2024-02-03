@@ -23,8 +23,8 @@ async fn main() {
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }
