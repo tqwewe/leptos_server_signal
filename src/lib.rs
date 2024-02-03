@@ -77,7 +77,7 @@ impl ServerSignalUpdate {
 /// pub fn App() -> impl IntoView {
 ///     // Provide websocket connection
 ///     leptos_server_signal::provide_websocket("ws://localhost:3000/ws").unwrap();
-///     
+///
 ///     // ...
 /// }
 /// ```
@@ -94,6 +94,10 @@ pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
 /// # Example
 ///
 /// ```
+/// # use leptos::{component, view, IntoView, SignalGet};
+/// # use serde::{Deserialize, Serialize};
+/// # use leptos_server_signal::create_server_signal;
+///
 /// #[derive(Clone, Default, Serialize, Deserialize)]
 /// pub struct Count {
 ///     pub value: i32,
@@ -105,7 +109,7 @@ pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
 ///     let count = create_server_signal::<Count>("counter");
 ///
 ///     view! {
-///         <h1>"Count: " {move || count().value.to_string()}</h1>
+///         <h1>"Count: " {move || count.get().value.to_string()}</h1>
 ///     }
 /// }
 /// ```
@@ -227,4 +231,3 @@ cfg_if::cfg_if! {
         }
     }
 }
-

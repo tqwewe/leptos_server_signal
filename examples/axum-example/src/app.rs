@@ -15,7 +15,5 @@ pub fn App() -> impl IntoView {
     // Create server signal
     let count = create_server_signal::<Count>("counter");
 
-    view! {
-        <h1>"Count: " {move || count().value.to_string()}</h1>
-    }
+    view! { <h1>"Count: " {move || count.get().value.to_string()}</h1> }
 }
