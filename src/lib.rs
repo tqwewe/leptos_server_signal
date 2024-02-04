@@ -51,11 +51,7 @@ impl ServerSignalUpdate {
     }
 
     /// Creates a new [`ServerSignalUpdate`] from two json values.
-    pub fn new_from_json<'s, 'e, T>(
-        name: impl Into<Cow<'static, str>>,
-        old: &Value,
-        new: &Value,
-    ) -> Self {
+    pub fn new_from_json<T>(name: impl Into<Cow<'static, str>>, old: &Value, new: &Value) -> Self {
         let patch = json_patch::diff(old, new);
         ServerSignalUpdate {
             name: name.into(),
