@@ -51,7 +51,7 @@ pub struct Count {
 #[component]
 pub fn App() -> impl IntoView {
     // Provide websocket connection
-    leptos_server_signal::provide_websocket("ws://localhost:3000/ws").unwrap();
+    let _ = leptos_server_signal::provide_websocket("ws://localhost:3000/ws");
 
     // Create server signal
     let count = create_server_signal::<Count>("counter");
