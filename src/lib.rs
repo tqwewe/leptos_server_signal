@@ -7,6 +7,7 @@ use leptos::{create_signal, ReadSignal};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasm_bindgen::JsValue;
+use web_sys::WebSocket;
 
 cfg_if::cfg_if! {
     if #[cfg(all(feature = "actix", feature = "ssr"))] {
@@ -61,8 +62,9 @@ impl ServerSignalUpdate {
 }
 
 /// Provides a websocket url for server signals, if there is not already one provided.
-/// This ensures that you can provide it at the highest possible level, without overwriting a websocket
-/// that has already been provided (for example, by a server-rendering integration.)
+///
+/// During SSR, this function is a no-op and returns `Ok(None)`.
+/// During CSR, if this function returns `Ok`, then the `Option` will always be `Some`.
 ///
 /// Note, the server should have a route to handle this websocket.
 ///
@@ -78,7 +80,7 @@ impl ServerSignalUpdate {
 /// }
 /// ```
 #[allow(unused_variables)]
-pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
+pub fn provide_websocket(url: &str) -> Result<Option<WebSocket>, JsValue> {
     provide_websocket_inner(url)
 }
 
@@ -156,11 +158,11 @@ cfg_if::cfg_if! {
         use std::collections::HashMap;
         use std::rc::Rc;
 
-        use web_sys::WebSocket;
         use leptos::{provide_context, RwSignal};
 
+        /// The websocket connection wrapper provided as a context in Leptos.
         #[derive(Clone, Debug, PartialEq, Eq)]
-        struct ServerSignalWebSocket {
+        pub struct ServerSignalWebSocket {
             ws: WebSocket,
             // References to these are kept by the closure for the callback
             // onmessage callback on the websocket
@@ -173,8 +175,15 @@ cfg_if::cfg_if! {
             delayed_updates: Rc<RefCell<HashMap<Cow<'static, str>, Vec<Patch>>>>,
         }
 
+        impl ServerSignalWebSocket {
+            /// Returns the inner websocket.
+            pub fn ws(&self) -> WebSocket {
+                self.ws.clone()
+            }
+        }
+
         #[inline]
-        fn provide_websocket_inner(url: &str) -> Result<(), JsValue> {
+        fn provide_websocket_inner(url: &str) -> Result<Option<WebSocket>, JsValue> {
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
             use leptos::{use_context, SignalUpdate};
@@ -218,12 +227,13 @@ cfg_if::cfg_if! {
 
             // Keep the closure alive for the lifetime of the program
             callback.forget();
-            Ok(())
+
+            Ok(Some(ws.ws()))
         }
     } else {
         #[inline]
-        fn provide_websocket_inner(_url: &str) -> Result<(), JsValue> {
-            Ok(())
+        fn provide_websocket_inner(_url: &str) -> Result<Option<WebSocket>, JsValue> {
+            Ok(None)
         }
     }
 }
