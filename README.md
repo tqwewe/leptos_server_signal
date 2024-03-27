@@ -62,8 +62,6 @@ pub fn App() -> impl IntoView {
 }
 ```
 
-> If on stable, use `count.get().value` instead of `count().value`.
-
 **Server (Axum)**
 
 ```rust
