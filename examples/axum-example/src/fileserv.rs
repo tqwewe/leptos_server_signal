@@ -2,7 +2,7 @@ use cfg_if::cfg_if;
 
 cfg_if! { if #[cfg(feature = "ssr")] {
     use axum::{
-        body::{boxed, Body, BoxBody},
+        body::Body,
         extract::State,
         response::IntoResponse,
         http::{Request, Response, StatusCode, Uri},
@@ -17,18 +17,18 @@ cfg_if! { if #[cfg(feature = "ssr")] {
         let res = get_static_file(uri.clone(), &root).await.unwrap();
 
         if res.status() == StatusCode::OK {
-           res.into_response()
+            res.into_response()
         } else {
             "404 not found".into_response()
         }
     }
 
-    async fn get_static_file(uri: Uri, root: &str) -> Result<Response<BoxBody>, (StatusCode, String)> {
+    async fn get_static_file(uri: Uri, root: &str) -> Result<Response<Body>, (StatusCode, String)> {
         let req = Request::builder().uri(uri.clone()).body(Body::empty()).unwrap();
         // `ServeDir` implements `tower::Service` so we can call it with `tower::ServiceExt::oneshot`
         // This path is relative to the cargo root
         match ServeDir::new(root).oneshot(req).await {
-            Ok(res) => Ok(res.map(boxed)),
+            Ok(res) => Ok(res.map(Box::new).into_response()),
             Err(err) => Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Something went wrong: {err}"),

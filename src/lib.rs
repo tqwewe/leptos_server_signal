@@ -33,10 +33,10 @@ pub struct ServerSignalUpdate {
 
 impl ServerSignalUpdate {
     /// Creates a new [`ServerSignalUpdate`] from an old and new instance of `T`.
-    pub fn new<'s, 'e, T>(
+    pub fn new<T>(
         name: impl Into<Cow<'static, str>>,
-        old: &'s T,
-        new: &'e T,
+        old: &T,
+        new: &T,
     ) -> Result<Self, serde_json::Error>
     where
         T: Serialize,
@@ -51,11 +51,7 @@ impl ServerSignalUpdate {
     }
 
     /// Creates a new [`ServerSignalUpdate`] from two json values.
-    pub fn new_from_json<'s, 'e, T>(
-        name: impl Into<Cow<'static, str>>,
-        old: &Value,
-        new: &Value,
-    ) -> Self {
+    pub fn new_from_json<T>(name: impl Into<Cow<'static, str>>, old: &Value, new: &Value) -> Self {
         let patch = json_patch::diff(old, new);
         ServerSignalUpdate {
             name: name.into(),
@@ -77,7 +73,7 @@ impl ServerSignalUpdate {
 /// pub fn App() -> impl IntoView {
 ///     // Provide websocket connection
 ///     leptos_server_signal::provide_websocket("ws://localhost:3000/ws").unwrap();
-///     
+///
 ///     // ...
 /// }
 /// ```
@@ -94,6 +90,10 @@ pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
 /// # Example
 ///
 /// ```
+/// # use leptos::{component, view, IntoView, SignalGet};
+/// # use serde::{Deserialize, Serialize};
+/// # use leptos_server_signal::create_server_signal;
+///
 /// #[derive(Clone, Default, Serialize, Deserialize)]
 /// pub struct Count {
 ///     pub value: i32,
@@ -105,7 +105,7 @@ pub fn provide_websocket(url: &str) -> Result<(), JsValue> {
 ///     let count = create_server_signal::<Count>("counter");
 ///
 ///     view! {
-///         <h1>"Count: " {move || count().value.to_string()}</h1>
+///         <h1>"Count: " {move || count.get().value.to_string()}</h1>
 ///     }
 /// }
 /// ```
@@ -227,4 +227,3 @@ cfg_if::cfg_if! {
         }
     }
 }
-
