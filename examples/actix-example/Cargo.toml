@@ -17,15 +17,10 @@ console_log = "1"
 cfg-if = "1"
 leptos = { version = "0.6", default-features = false, features = [
   "serde",
-  "nightly"
 ] }
-leptos_meta = { version = "0.6", default-features = false, features = [
-  "nightly"
-]}
+leptos_meta = { version = "0.6", default-features = false }
 leptos_actix = { version = "0.6", optional = true }
-leptos_router = { version = "0.6", default-features = false, features = [
-  "nightly"
-]}
+leptos_router = { version = "0.6", default-features = false }
 leptos_server_signal = { path = "../.." }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -47,6 +42,7 @@ ssr = [
   "leptos_server_signal/ssr",
   "leptos_server_signal/actix",
 ]
+nightly = ["leptos/nightly", "leptos_meta/nightly", "leptos_router/nightly"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   
