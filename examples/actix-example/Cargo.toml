@@ -42,7 +42,6 @@ ssr = [
   "leptos_server_signal/ssr",
   "leptos_server_signal/actix",
 ]
-nightly = ["leptos/nightly", "leptos_meta/nightly", "leptos_router/nightly"]
 
 [package.metadata.leptos]
 # The name used by wasm-bindgen/cargo-leptos for the JS/WASM bundle. Defaults to the crate name   

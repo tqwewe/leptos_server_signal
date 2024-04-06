@@ -43,7 +43,6 @@ ssr = [
     "leptos_server_signal/axum",
     "dep:tracing"
 ]
-nightly = ["leptos/nightly", "leptos_meta/nightly", "leptos_router/nightly"]
 
 [package.metadata.cargo-all-features]
 denylist = [
