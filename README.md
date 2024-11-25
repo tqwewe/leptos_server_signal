@@ -83,3 +83,23 @@ async fn handle_socket(mut socket: WebSocket) {
     }
 }
 ```
+
+# Connection Retry
+
+With the example above, the connection does not get reestablished after a connection lost.
+To regularly try to reconnect again, the function `provide_websocket_with_retry(...)` can
+be used:
+
+```rust
+#[component]
+pub fn App() -> impl IntoView {
+    // Provide websocket connection
+    leptos_server_signal::provide_websocket_with_retry(
+        "ws://localhost:3000/ws",
+        5000, // retry in 5000 milliseconds
+    ).unwrap();
+
+    // ... code from above
+}
+```
+
