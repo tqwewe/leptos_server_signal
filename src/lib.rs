@@ -84,6 +84,40 @@ pub fn provide_websocket(url: &str) -> Result<Option<WebSocket>, JsValue> {
     provide_websocket_inner(url)
 }
 
+/// Provides a websocket url for server signals, if there is not already one provided.
+/// In case of a connection lost, the websocket will be reconnected after the specified 
+/// timeout.
+///
+/// During SSR, this function is a no-op and returns `Ok(None)`.
+/// During CSR, if this function returns `Ok`, then the `Option` will always be `Some`.
+///
+/// Note, the server should have a route to handle this websocket.
+///
+/// # Example
+///
+/// ```ignore
+/// #[component]
+/// pub fn App() -> impl IntoView {
+///     // Provide websocket connection
+///     leptos_server_signal::provide_websocket_with_retry(
+///         "ws://localhost:3000/ws",
+///         5000, // retry to connect after 5 seconds
+///     ).unwrap();
+///
+///     // ...
+/// }
+/// ```
+pub fn provide_websocket_with_retry(
+    url: &str,
+    timeout_in_ms: i32
+) -> Result<Option<WebSocket>, JsValue> {
+    let ws = provide_websocket_inner(url);
+    if let Ok(Some(ref ws)) = ws {
+        add_retry_timeout(&ws, timeout_in_ms);
+    }
+    ws
+}
+
 /// Creates a signal which is controlled by the server.
 ///
 /// This signal is initialized as T::default, is read-only on the client, and is updated through json patches
@@ -230,10 +264,47 @@ cfg_if::cfg_if! {
 
             Ok(Some(ws.ws()))
         }
+
+        #[inline]
+        fn add_retry_timeout(ws: &WebSocket, timeout_in_ms: i32) {
+            use web_sys::{MessageEvent, window};
+            use wasm_bindgen::prelude::{Closure, JsCast};
+            use leptos::use_context;
+            use js_sys::Function;
+
+            let mut server_signal_ws = use_context::<ServerSignalWebSocket>().unwrap();
+
+            let on_timeout_callback = Closure::wrap(Box::new(move |_: MessageEvent| {
+                leptos::logging::log!("Try to reconnect signal web-socket.");                
+                let new_ws = WebSocket::new(server_signal_ws.ws.url().as_str()).unwrap();
+                new_ws.set_onmessage(server_signal_ws.ws.onmessage().as_ref());
+                new_ws.set_onclose(server_signal_ws.ws.onclose().as_ref());
+                new_ws.set_onerror(server_signal_ws.ws.onerror().as_ref());
+                server_signal_ws.ws = new_ws;
+            }) as Box<dyn FnMut(_)>);
+
+            let on_error_callback = Closure::wrap(Box::new(move |_: MessageEvent| {
+                let on_timeout_function: &Function = on_timeout_callback.as_ref().unchecked_ref();
+                leptos::logging::log!(
+                    "Connection lost to signal web-socket. Try to reconnect in {} milliseconds.",
+                    timeout_in_ms
+                );
+                let _ = window().unwrap().set_timeout_with_callback_and_timeout_and_arguments_0(
+                    on_timeout_function,
+                    timeout_in_ms
+                );
+            }) as Box<dyn FnMut(_)>);
+            let on_error_function: &Function = on_error_callback.as_ref().unchecked_ref();
+            ws.set_onerror(Some(on_error_function));
+            on_error_callback.forget();
+        }
     } else {
         #[inline]
         fn provide_websocket_inner(_url: &str) -> Result<Option<WebSocket>, JsValue> {
             Ok(None)
         }
+
+        #[inline]
+        fn add_retry_timeout(_ws: &WebSocket, _timeout_in_ms: i32) {}        
     }
 }
