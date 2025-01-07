@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 
 use json_patch::Patch;
-use leptos::{create_signal, ReadSignal};
+use leptos::prelude::{signal, ReadSignal};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasm_bindgen::JsValue;
@@ -85,7 +85,7 @@ pub fn provide_websocket(url: &str) -> Result<Option<WebSocket>, JsValue> {
 }
 
 /// Provides a websocket url for server signals, if there is not already one provided.
-/// In case of a connection lost, the websocket will be reconnected after the specified 
+/// In case of a connection lost, the websocket will be reconnected after the specified
 /// timeout.
 ///
 /// During SSR, this function is a no-op and returns `Ok(None)`.
@@ -109,7 +109,7 @@ pub fn provide_websocket(url: &str) -> Result<Option<WebSocket>, JsValue> {
 /// ```
 pub fn provide_websocket_with_retry(
     url: &str,
-    timeout_in_ms: i32
+    timeout_in_ms: i32,
 ) -> Result<Option<WebSocket>, JsValue> {
     let ws = provide_websocket_inner(url);
     if let Ok(Some(ref ws)) = ws {
@@ -148,10 +148,10 @@ pub fn provide_websocket_with_retry(
 #[allow(unused_variables)]
 pub fn create_server_signal<T>(name: impl Into<Cow<'static, str>>) -> ReadSignal<T>
 where
-    T: Default + Serialize + for<'de> Deserialize<'de>,
+    T: Send + Sync + Default + Serialize + for<'de> Deserialize<'de> + 'static,
 {
     let name: Cow<'static, str> = name.into();
-    let (get, set) = create_signal(T::default());
+    let (get, set) = signal(T::default());
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -275,7 +275,7 @@ cfg_if::cfg_if! {
             let mut server_signal_ws = use_context::<ServerSignalWebSocket>().unwrap();
 
             let on_timeout_callback = Closure::wrap(Box::new(move |_: MessageEvent| {
-                leptos::logging::log!("Try to reconnect signal web-socket.");                
+                leptos::logging::log!("Try to reconnect signal web-socket.");
                 let new_ws = WebSocket::new(server_signal_ws.ws.url().as_str()).unwrap();
                 new_ws.set_onmessage(server_signal_ws.ws.onmessage().as_ref());
                 new_ws.set_onclose(server_signal_ws.ws.onclose().as_ref());
@@ -305,6 +305,6 @@ cfg_if::cfg_if! {
         }
 
         #[inline]
-        fn add_retry_timeout(_ws: &WebSocket, _timeout_in_ms: i32) {}        
+        fn add_retry_timeout(_ws: &WebSocket, _timeout_in_ms: i32) {}
     }
 }
