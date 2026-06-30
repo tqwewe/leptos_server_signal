@@ -58,8 +58,8 @@ impl<T> ServerSignal<T> {
         let new_json = serde_json::to_value(self.value.clone())?;
         let update =
             ServerSignalUpdate::new_from_json::<T>(self.name.clone(), &self.json_value, &new_json);
-        let update_json = serde_json::to_string(&update)?;
-        sink.send(Message::Text(update_json))
+        let update_json: String = serde_json::to_string(&update)?;
+        sink.send(Message::Text(update_json.into()))
             .await
             .map_err(|err| Error::WebSocket(err.into()))?;
         self.json_value = new_json;

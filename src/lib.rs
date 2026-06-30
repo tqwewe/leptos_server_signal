@@ -81,7 +81,8 @@ impl ServerSignalUpdate {
 /// ```
 #[allow(unused_variables)]
 pub fn provide_websocket(url: &str) -> Result<Option<WebSocket>, JsValue> {
-    provide_websocket_inner(url)
+    println!("provide_websocket4444444444 {}", url.clone());
+    provide_websocket_inner1(url)
 }
 
 /// Provides a websocket url for server signals, if there is not already one provided.
@@ -111,7 +112,10 @@ pub fn provide_websocket_with_retry(
     url: &str,
     timeout_in_ms: i32,
 ) -> Result<Option<WebSocket>, JsValue> {
-    let ws = provide_websocket_inner(url);
+        println!("provide_websocket_with_retry");
+
+    let ws = provide_websocket_inner1(url);
+
     if let Ok(Some(ref ws)) = ws {
         add_retry_timeout(&ws, timeout_in_ms);
     }
@@ -219,12 +223,17 @@ cfg_if::cfg_if! {
         }
 
         #[inline]
-        fn provide_websocket_inner(url: &str) -> Result<Option<WebSocket>, JsValue> {
+        fn provide_websocket_inner1(url: &str) -> Result<Option<WebSocket>, JsValue> {
+            web_sys::console::log_1(&"provide_w4v5345v345v345v3445ebsocket4444444444".into());
+            use leptos::logging::log;
+            log!("Hello from Leptos WASM!");
+            println!("provide_websocket_inner");
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
             //use leptos::{use_context, SignalUpdate};
             use leptos::prelude::*;
             use js_sys::{Function, JsString};
+            leptos::logging::log!("provide_websocket_inner");
 
             if use_context::<ServerSignalWebSocket>().is_none() {
                 let ws = WebSocket::new(url)?;
@@ -319,7 +328,8 @@ cfg_if::cfg_if! {
         }
     } else {
         #[inline]
-        fn provide_websocket_inner(_url: &str) -> Result<Option<WebSocket>, JsValue> {
+        fn provide_websocket_inner1(_url: &str) -> Result<Option<WebSocket>, JsValue> {
+            println!("provide_websocket_inner1 from the SSR");
             Ok(None)
         }
 

@@ -8,16 +8,17 @@ async fn main() {
     use axum_example::app::*;
     use axum_example::fileserv::file_and_error_handler;
     use leptos::*;
+    use leptos::prelude::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
 
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
     let leptos_options = conf.leptos_options;
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(|| view! { <App/> });
 
     // build our application with a route
     let app = Router::new()
-        .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
+        .route("/api/{*fn_name}", post(leptos_axum::handle_server_fns))
         .route("/ws", get(websocket))
         .leptos_routes(&leptos_options, routes, || view! { <App/> })
         .fallback(file_and_error_handler)
@@ -38,12 +39,14 @@ pub fn main() {
 
 #[cfg(feature = "ssr")]
 pub async fn websocket(ws: axum::extract::WebSocketUpgrade) -> axum::response::Response {
+    println!("websocket1");
     ws.on_upgrade(handle_socket)
 }
 
 #[cfg(feature = "ssr")]
 async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
     use std::time::Duration;
+    println!("handle_socket1");
 
     use axum_example::app::Count;
     use leptos_server_signal::ServerSignal;
@@ -53,6 +56,8 @@ async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
     loop {
         tokio::time::sleep(Duration::from_millis(100)).await;
         let result = count.with(&mut socket, |count| count.value += 1).await;
+        println!("handle_socket: loop");
+
         if result.is_err() {
             break;
         }

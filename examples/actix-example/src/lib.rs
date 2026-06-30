@@ -12,8 +12,10 @@ if #[cfg(feature = "hydrate")] {
       use leptos::*;
 
       // initializes logging using the `log` crate
-      _ = console_log::init_with_level(log::Level::Debug);
-      console_error_panic_hook::set_once();
+      //_ = console_log::init_with_level(log::Level::Info);
+      //console_error_panic_hook::set_once();
+      debug!("asdf");
+      asdf
 
       leptos::mount_to_body(move || {
           view! { <App/> }
