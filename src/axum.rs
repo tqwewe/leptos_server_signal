@@ -44,8 +44,8 @@ impl<T> ServerSignal<T> {
     ///     count.value += 1;
     /// }).await?;
     /// ```
-    pub async fn with<'e, O, S>(
-        &'e mut self,
+    pub async fn with<O, S>(
+        &mut self,
         sink: &mut S,
         f: impl FnOnce(&mut T) -> O,
     ) -> Result<O, Error>
@@ -59,7 +59,7 @@ impl<T> ServerSignal<T> {
         let update =
             ServerSignalUpdate::new_from_json::<T>(self.name.clone(), &self.json_value, &new_json);
         let update_json = serde_json::to_string(&update)?;
-        sink.send(Message::Text(update_json))
+        sink.send(Message::Text(update_json.into()))
             .await
             .map_err(|err| Error::WebSocket(err.into()))?;
         self.json_value = new_json;

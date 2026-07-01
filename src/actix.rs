@@ -46,7 +46,7 @@ impl<T> ServerSignal<T> {
     ///     count.value += 1;
     /// }).await?;
     /// ```
-    pub async fn with<'e, O>(&'e mut self, f: impl FnOnce(&mut T) -> O) -> Result<O, Error>
+    pub async fn with<O>(&mut self, f: impl FnOnce(&mut T) -> O) -> Result<O, Error>
     where
         T: Clone + Serialize + 'static,
     {

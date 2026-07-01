@@ -10,7 +10,7 @@ cfg_if! { if #[cfg(feature = "ssr")] {
     use axum::response::Response as AxumResponse;
     use tower::ServiceExt;
     use tower_http::services::ServeDir;
-    use leptos::*;
+    use leptos::config::LeptosOptions;
 
     pub async fn file_and_error_handler(uri: Uri, State(options): State<LeptosOptions>) -> AxumResponse {
         let root = options.site_root.clone();

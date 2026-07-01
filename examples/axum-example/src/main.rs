@@ -7,19 +7,22 @@ async fn main() {
     };
     use axum_example::app::*;
     use axum_example::fileserv::file_and_error_handler;
-    use leptos::*;
+    use leptos::{config::get_configuration, prelude::*};
     use leptos_axum::{generate_route_list, LeptosRoutes};
 
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
     let leptos_options = conf.leptos_options;
     let addr = leptos_options.site_addr;
     let routes = generate_route_list(|| view! { <App/> });
 
     // build our application with a route
     let app = Router::new()
-        .route("/api/*fn_name", post(leptos_axum::handle_server_fns))
+        .route("/api/{*fn_name}", post(leptos_axum::handle_server_fns))
         .route("/ws", get(websocket))
-        .leptos_routes(&leptos_options, routes, || view! { <App/> })
+        .leptos_routes(&leptos_options, routes, {
+            let leptos_options = leptos_options.clone();
+            move || shell(leptos_options.clone())
+        })
         .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
@@ -58,4 +61,3 @@ async fn handle_socket(mut socket: axum::extract::ws::WebSocket) {
         }
     }
 }
-
