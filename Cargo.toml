@@ -18,19 +18,19 @@ categories = [
 [dependencies]
 cfg-if = "1"
 js-sys = "0.3"
-json-patch = "1"
-leptos = { version = "0.7", default-features = false }
+json-patch = "4.2"
+leptos = { version = "0.8", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 wasm-bindgen = { version = "0.2", default-features = false }
 web-sys = { version = "0.3", features = ["WebSocket", "MessageEvent", "Window"] }
-thiserror = { version = "1", optional = true }
+thiserror = { version = "2", optional = true }
 
 # Actix
-actix-ws = { version = "0.2", optional = true }
+actix-ws = { version = "0.4", optional = true }
 
 # Axum
-axum = { version = "0.7", default-features = false, features = ["ws"], optional = true }
+axum = { version = "0.8", default-features = false, features = ["ws"], optional = true }
 futures = { version = "0.3", default-features = false, optional = true }
 
 [features]

@@ -4,10 +4,10 @@ async fn main() -> std::io::Result<()> {
     use actix_example::app::*;
     use actix_files::Files;
     use actix_web::*;
-    use leptos::*;
+    use leptos::{config::get_configuration, prelude::*};
     use leptos_actix::{generate_route_list, LeptosRoutes};
 
-    let conf = get_configuration(None).await.unwrap();
+    let conf = get_configuration(None).unwrap();
     let addr = conf.leptos_options.site_addr;
     let routes = generate_route_list(|| view! { <App/> });
 
@@ -18,12 +18,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
             .route("/ws", web::get().to(websocket))
-            .leptos_routes(
-                leptos_options.to_owned(),
-                routes.to_owned(),
-                || view! { <App/> },
-            )
-            .service(Files::new("/", site_root))
+            .leptos_routes(routes.to_owned(), {
+                let leptos_options = leptos_options.clone();
+                move || shell(leptos_options.clone())
+            })
+            .service(Files::new("/", site_root.as_ref()))
     })
     .bind(&addr)?
     .run()
@@ -62,4 +61,3 @@ pub async fn websocket(
 
     res
 }
-

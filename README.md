@@ -39,7 +39,7 @@ ssr = [
 **Client**
 
 ```rust
-use leptos::*;
+use leptos::prelude::*;
 use leptos_server_signal::create_server_signal;
 use serde::{Deserialize, Serialize};
 
@@ -64,7 +64,7 @@ pub fn App() -> impl IntoView {
 
 **Server (Axum)**
 
-```rust
+```rust,ignore
 #[cfg(feature = "ssr")]
 pub async fn websocket(ws: WebSocketUpgrade) -> Response {
     ws.on_upgrade(handle_socket)
@@ -90,7 +90,7 @@ With the example above, the connection does not get reestablished after a connec
 To regularly try to reconnect again, the function `provide_websocket_with_retry(...)` can
 be used:
 
-```rust
+```rust,ignore
 #[component]
 pub fn App() -> impl IntoView {
     // Provide websocket connection

@@ -113,7 +113,7 @@ pub fn provide_websocket_with_retry(
 ) -> Result<Option<WebSocket>, JsValue> {
     let ws = provide_websocket_inner(url);
     if let Ok(Some(ref ws)) = ws {
-        add_retry_timeout(&ws, timeout_in_ms);
+        add_retry_timeout(ws, timeout_in_ms);
     }
     ws
 }
@@ -126,7 +126,7 @@ pub fn provide_websocket_with_retry(
 /// # Example
 ///
 /// ```
-/// # use leptos::{component, view, IntoView, SignalGet};
+/// # use leptos::prelude::*;
 /// # use serde::{Deserialize, Serialize};
 /// # use leptos_server_signal::create_server_signal;
 ///
@@ -155,18 +155,17 @@ where
 
     cfg_if::cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
-            use leptos::{use_context, create_effect, create_rw_signal, SignalGet, SignalSet};
+            use leptos::prelude::{use_context, Get, Effect, RwSignal, Set};
 
-            let signal = create_rw_signal(serde_json::to_value(T::default()).unwrap());
+            let signal = RwSignal::new(serde_json::to_value(T::default()).unwrap());
             if let Some(ServerSignalWebSocket { state_signals, .. }) = use_context::<ServerSignalWebSocket>() {
-                let name: Cow<'static, str> = name.into();
-                state_signals.borrow_mut().insert(name.clone(), signal);
+                state_signals.lock().unwrap().insert(name.clone(), signal);
 
                 // Note: The leptos docs advise against doing this. It seems to work
                 // well in testing, and the primary caveats are around unnecessary
                 // updates firing, but our state synchronization already prevents
                 // that on the server side
-                create_effect(move |_| {
+                Effect::new(move |_| {
                     let name = name.clone();
                     let new_value = serde_json::from_value(signal.get()).unwrap();
                     set.set(new_value);
@@ -188,25 +187,24 @@ Ensure you call `leptos_server_signal::provide_websocket("ws://localhost:3000/ws
 
 cfg_if::cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
-        use std::cell::RefCell;
         use std::collections::HashMap;
-        use std::rc::Rc;
+        use std::sync::{Arc, Mutex};
 
-        use leptos::{provide_context, RwSignal};
+        use leptos::prelude::{provide_context, RwSignal};
 
         /// The websocket connection wrapper provided as a context in Leptos.
-        #[derive(Clone, Debug, PartialEq, Eq)]
+        #[derive(Clone, Debug)]
         pub struct ServerSignalWebSocket {
             ws: WebSocket,
             // References to these are kept by the closure for the callback
             // onmessage callback on the websocket
-            state_signals: Rc<RefCell<HashMap<Cow<'static, str>, RwSignal<serde_json::Value>>>>,
+            state_signals: Arc<Mutex<HashMap<Cow<'static, str>, RwSignal<serde_json::Value>>>>,
             // When the websocket is first established, the leptos may not have
             // completed the traversal that sets up all of the state signals.
             // Without that, we don't have a base state to apply the patches to,
             // and therefore we must keep a record of the patches to apply after
             // the state has been set up.
-            delayed_updates: Rc<RefCell<HashMap<Cow<'static, str>, Vec<Patch>>>>,
+            delayed_updates: Arc<Mutex<HashMap<Cow<'static, str>, Vec<Patch>>>>,
         }
 
         impl ServerSignalWebSocket {
@@ -220,12 +218,12 @@ cfg_if::cfg_if! {
         fn provide_websocket_inner(url: &str) -> Result<Option<WebSocket>, JsValue> {
             use web_sys::MessageEvent;
             use wasm_bindgen::{prelude::Closure, JsCast};
-            use leptos::{use_context, SignalUpdate};
+            use leptos::prelude::{use_context, Update};
             use js_sys::{Function, JsString};
 
             if use_context::<ServerSignalWebSocket>().is_none() {
                 let ws = WebSocket::new(url)?;
-                provide_context(ServerSignalWebSocket { ws, state_signals: Rc::default(), delayed_updates: Rc::default() });
+                provide_context(ServerSignalWebSocket { ws, state_signals: Default::default(), delayed_updates: Default::default() });
             }
 
             let ws = use_context::<ServerSignalWebSocket>().unwrap();
@@ -236,9 +234,9 @@ cfg_if::cfg_if! {
             let callback = Closure::wrap(Box::new(move |event: MessageEvent| {
                 let ws_string = event.data().dyn_into::<JsString>().unwrap().as_string().unwrap();
                 if let Ok(update_signal) = serde_json::from_str::<ServerSignalUpdate>(&ws_string) {
-                    let handler_map = (*handlers).borrow();
+                    let handler_map = handlers.lock().unwrap();
                     let name = &update_signal.name;
-                    let mut delayed_map = (*delayed_updates).borrow_mut();
+                    let mut delayed_map = delayed_updates.lock().unwrap();
                     if let Some(signal) = handler_map.get(name) {
                         if let Some(delayed_patches) = delayed_map.remove(name) {
                             signal.update(|doc| {
@@ -269,7 +267,7 @@ cfg_if::cfg_if! {
         fn add_retry_timeout(ws: &WebSocket, timeout_in_ms: i32) {
             use web_sys::{MessageEvent, window};
             use wasm_bindgen::prelude::{Closure, JsCast};
-            use leptos::use_context;
+            use leptos::prelude::use_context;
             use js_sys::Function;
 
             let mut server_signal_ws = use_context::<ServerSignalWebSocket>().unwrap();
