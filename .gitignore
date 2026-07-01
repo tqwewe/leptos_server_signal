@@ -1,5 +1,7 @@
 **/target
 **/Cargo.lock
+# Keep lockfiles for the example binaries so their builds are reproducible
+!examples/*/Cargo.lock
 pkg
 
 # Devenv
